@@ -1,0 +1,87 @@
+import { cre, Runner, type TeeRuntime } from "@chainlink/cre-sdk";
+import { z } from "zod";
+import {
+  inputSchema,
+  validateModel,
+  evidence,
+  inconclusive,
+  type EvaluationInput,
+} from "../shared/evaluation";
+
+// All model I/O and validation remain inside handlerInTee. CLI simulation is not TEE attestation.
+export function evaluateInTee(runtime: TeeRuntime<EvaluationInput>) {
+  const i = inputSchema.parse(runtime.config);
+  let semantic;
+  try {
+    const key = runtime.getSecret({ id: "ANTHROPIC_API_KEY" }).result().value;
+    if (!key) throw Error("Missing credential");
+    const http = new cre.capabilities.HTTPClient();
+    const body = JSON.stringify({
+      model: i.policy.model,
+      max_tokens: 5000,
+      temperature: 0,
+      system: i.policy.prompt,
+      messages: [
+        {
+          role: "user",
+          content: JSON.stringify({
+            brief: i.brief,
+            sources: i.sources,
+            criteria: i.policy.criteria,
+            report: i.report,
+          }),
+        },
+      ],
+    });
+    let raw: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let response;
+      try {
+        response = http
+          .sendRequest(runtime, {
+            url: "https://api.anthropic.com/v1/messages",
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              "anthropic-version": "2023-06-01",
+              "x-api-key": key,
+            },
+            body: Buffer.from(body).toString("base64"),
+            timeout: "30s",
+          })
+          .result();
+      } catch {
+        if (attempt === 2) throw Error("Transport unavailable");
+        continue;
+      }
+      if (response.statusCode === 429 || response.statusCode >= 500) {
+        if (attempt === 2) throw Error("Provider unavailable");
+        continue;
+      }
+      if (response.statusCode !== 200 || response.body.length > 100000)
+        throw Error("Invalid response");
+      const payload = z
+        .object({
+          stop_reason: z.literal("end_turn"),
+          content: z
+            .array(
+              z.object({
+                type: z.literal("text"),
+                text: z.string().max(50000),
+              }),
+            )
+            .length(1),
+        })
+        .parse(JSON.parse(new TextDecoder().decode(response.body)));
+      raw = JSON.parse(payload.content[0]!.text);
+      break;
+    }
+    semantic = validateModel(raw, i);
+  } catch {
+    semantic = inconclusive(i);
+  }
+  const result = evidence(i, semantic);
+  // Only deliberately public evidence is emitted, never credentials or raw provider responses.
+  runtime.log("ARBITER_EVIDENCE:" + JSON.stringify(result));
+  return JSON.stringify(result);
+}

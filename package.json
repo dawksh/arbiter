@@ -1,0 +1,40 @@
+{
+  "name": "arbiter",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "prettier": "^3.9.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@chainlink/cre-sdk": "1.19.1",
+    "@openzeppelin/contracts": "5.6.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "viem": "^2.56.3",
+    "zod": "^4.5.4"
+  },
+  "scripts": {
+    "dev": "bun --hot index.ts",
+    "start": "bun index.ts",
+    "typecheck": "tsc --noEmit && tsc -p cre/tsconfig.json --noEmit",
+    "test": "bun test tests/*.test.ts && bun test cre/handler.test.ts",
+    "test:contracts": "forge test",
+    "test:browser": "playwright test",
+    "build": "bun build web/index.html --outdir dist --minify",
+    "abi": "forge build && bun scripts/abi.ts",
+    "setup:local": "bun scripts/setup-local.ts",
+    "deploy:arc": "bun scripts/deploy-arc.ts",
+    "proof": "bun scripts/proof.ts",
+    "build:cre": "cre-compile cre/main.ts .cache/evaluator.wasm",
+    "dev:local": "bun --env-file=.env.anvil --hot index.ts",
+    "format": "prettier --write web server shared scripts tests cre *.ts *.json"
+  }
+}
