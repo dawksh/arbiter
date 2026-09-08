@@ -1,5 +1,6 @@
 import { test, expect } from "bun:test";
 import { evaluateInTee } from "./handler";
+import { evidenceRecord } from "../server/evaluator";
 import { sampleBrief, sampleSources, samplePolicy } from "../shared/evaluation";
 const config = {
   agreementId: "1",
@@ -78,6 +79,7 @@ test("confidential handler pins request and emits validated public evidence only
   const result = JSON.parse(evaluateInTee(r as any));
   expect(result.outcome).toBe(1);
   expect(r.calls).toBe(1);
+  expect(evidenceRecord(r.logs.join("\n"))).toEqual(result);
   expect(r.logs.join("")).not.toContain("private-test-secret");
 });
 for (const mode of [

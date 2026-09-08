@@ -18,7 +18,7 @@ export function evaluateInTee(runtime: TeeRuntime<EvaluationInput>) {
     const http = new cre.capabilities.HTTPClient();
     const body = JSON.stringify({
       model: i.policy.model,
-      max_tokens: 5000,
+      max_tokens: 900,
       temperature: 0,
       system: i.policy.prompt,
       messages: [
@@ -82,6 +82,11 @@ export function evaluateInTee(runtime: TeeRuntime<EvaluationInput>) {
   }
   const result = evidence(i, semantic);
   // Only deliberately public evidence is emitted, never credentials or raw provider responses.
-  runtime.log("ARBITER_EVIDENCE:" + JSON.stringify(result));
+  const encoded = Buffer.from(JSON.stringify(result)).toString("base64");
+  const chunkSize = 400;
+  for (let offset = 0; offset < encoded.length; offset += chunkSize)
+    runtime.log(
+      `ARBITER_EVIDENCE_${offset / chunkSize}:${encoded.slice(offset, offset + chunkSize)}`,
+    );
   return JSON.stringify(result);
 }
