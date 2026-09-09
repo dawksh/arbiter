@@ -37,6 +37,9 @@ test("valid work meets deterministic checks and strict criterion validation", ()
   expect(
     evidence(input, validateModel({ criteria: semantic() }, input)).outcome,
   ).toBe(1);
+  expect(
+    evidence(input, validateModel({ criteria: semantic() }, input)).reason,
+  ).toBe("Accepted: all agreed checks passed.");
 });
 test("missing requirements fail", () => {
   expect(evidence({ ...input, report: "Too short" }, semantic()).outcome).toBe(
@@ -57,6 +60,9 @@ test("unsupported claims fixture refunds when semantic review fails", () => {
     excerpts: [],
   };
   expect(evidence(input, s).outcome).toBe(2);
+  expect(evidence(input, s).reason).toContain(
+    "tradeoffs: Claim is unsupported by source notes.",
+  );
 });
 test("prompt injection cannot supply verdict or fabricated excerpts", () => {
   const attack = {

@@ -3,6 +3,7 @@ import { relative, resolve } from "node:path";
 import {
   validateEvidence,
   inputSchema,
+  type ExecutionMode,
   type EvaluationInput,
 } from "../shared/evaluation";
 
@@ -58,8 +59,20 @@ export function evidenceRecord(output: string) {
 }
 
 export async function simulate(input: EvaluationInput) {
+  return simulateInternal(input, "cre-cli-simulation-trusted-relay");
+}
+
+/** Runs CRE without a model credential and never relays the synthetic result. */
+export async function simulateNoModel(input: EvaluationInput) {
+  return simulateInternal(
+    { ...input, simulationMode: "no-model" },
+    "cre-cli-simulation-no-model",
+  );
+}
+
+async function simulateInternal(input: EvaluationInput, mode: ExecutionMode) {
   inputSchema.parse(input);
-  if (!process.env.ANTHROPIC_API_KEY)
+  if (mode === "cre-cli-simulation-trusted-relay" && !process.env.ANTHROPIC_API_KEY)
     throw Error(
       "ANTHROPIC_API_KEY is missing; evaluation will time out to human review.",
     );
@@ -90,6 +103,7 @@ export async function simulate(input: EvaluationInput) {
         ].includes(name),
       ),
     );
+    if (mode === "cre-cli-simulation-no-model") childEnv.ANTHROPIC_API_KEY = "";
     const child = Bun.spawn(
       [
         cli,
@@ -125,7 +139,7 @@ export async function simulate(input: EvaluationInput) {
       clearTimeout(timer);
     }
     const returned = evidenceRecord(output);
-    return validateEvidence(returned, input);
+    return validateEvidence(returned, input, mode);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

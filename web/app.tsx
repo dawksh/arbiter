@@ -810,6 +810,11 @@ function DetailView({
     policy: Policy | null = a.policy ? JSON.parse(a.policy) : null;
   const sources = a.sources ? JSON.parse(a.sources) : [];
   const ev = a.job?.evidence ? JSON.parse(a.job.evidence) : null;
+  const evReason =
+    ev?.reason ||
+    (ev?.criteria || []).find((criterion: Criterion) => criterion.status !== "PASS")
+      ?.justification ||
+    "No overall evaluation reason recorded.";
   const verified = !!ev && hash(a.job!.evidence!) === a.evidenceHash;
   const client = account?.toLowerCase() === a.client.toLowerCase(),
     worker = account?.toLowerCase() === a.terms.worker.toLowerCase(),
@@ -971,11 +976,23 @@ function DetailView({
             <p className="muted">
               {ev?.executionMode === "synthetic-test-fixture"
                 ? "Synthetic test fixture · no model call"
+                : ev?.executionMode === "cre-cli-simulation-no-model"
+                  ? "CRE CLI simulation · no model call · not relayed"
                 : config.executionMode}
             </p>
             {a.job?.error && <p className="alert">{a.job.error}</p>}
             {ev ? (
               <>
+                <div className={"evaluation-reason outcome-" + ev.outcome}>
+                  <h3>
+                    {ev.outcome === 2
+                      ? "Rejection reason"
+                      : ev.outcome === 0
+                        ? "Why human review is needed"
+                        : "Evaluation summary"}
+                  </h3>
+                  <p>{evReason}</p>
+                </div>
                 {ev.criteria.map((c: Criterion) => (
                   <div className="evidence" key={c.id}>
                     <span className={"verdict " + c.status}>{c.status}</span>

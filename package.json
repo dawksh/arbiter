@@ -33,6 +33,7 @@
     "setup:local": "bun scripts/setup-local.ts",
     "deploy:arc": "bun scripts/deploy-arc.ts",
     "proof": "bun scripts/proof.ts",
+    "simulate": "bun scripts/simulate.ts",
     "build:cre": "cre-compile cre/main.ts .cache/evaluator.wasm",
     "dev:local": "bun --env-file=.env.anvil --hot index.ts",
     "format": "prettier --write web server shared scripts tests cre *.ts *.json"

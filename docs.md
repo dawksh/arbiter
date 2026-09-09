@@ -21,9 +21,8 @@ This is an unaudited **testnet MVP**. It deliberately excludes revisions,
 fees, bonds, private document storage, arbitrary web research, citation
 verification, evaluator marketplaces, and live TEE attestation.
 
-The worker interface currently accepts pasted Markdown text. Although the
-original product concept mentioned Markdown file uploads, no file-picker or
-file-upload endpoint is implemented in this version.
+The worker can paste Markdown or select a UTF-8 Markdown/text file; the exact
+decoded content is saved and committed before on-chain submission.
 
 ## System map
 
@@ -225,7 +224,7 @@ Copy `.env.example` to an untracked environment file and supply:
 
 ```dotenv
 CHAIN_ID=5042002
-RPC_URL=https://rpc.testnet.arc.io
+RPC_URL=https://rpc.testnet.arc.network
 ESCROW_ADDRESS=                 # set after deployment
 DEPLOYMENT_BLOCK=               # set after deployment
 DB_PATH=arc.sqlite
@@ -254,6 +253,23 @@ bun --env-file=.env.arc scripts/proof.ts <agreement-id>
 
 Do not run a second relay worker against the same database. The server scopes a
 database to one chain and escrow and rejects an accidental deployment change.
+
+### No-credit CRE simulation
+
+`cre workflow simulate` executes the workflow code locally. In the normal
+workflow, that code calls Anthropic, so it may consume model credits even
+though it is not a live deployment. To exercise CRE compilation, the
+confidential handler, structured evidence, and log transport without sending a
+model request or an on-chain transaction, run:
+
+```sh
+bun --env-file=.env.arc scripts/simulate.ts <submitted-agreement-id>
+```
+
+This command removes the model credential from the child process. It returns
+an `INCONCLUSIVE` record labelled `cre-cli-simulation-no-model`; it does not
+write SQLite evidence or relay a result. It is a development check, not proof
+of an AI evaluation.
 
 ## Verification
 

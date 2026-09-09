@@ -62,6 +62,7 @@ export const inputSchema = z
     sources: sourcesSchema,
     policy: policySchema,
     report: z.string().min(1).max(80000),
+    simulationMode: z.literal("no-model").optional(),
   })
   .strict();
 export type EvaluationInput = z.infer<typeof inputSchema>;
@@ -74,6 +75,24 @@ export const criterionSchema = z
   })
   .strict();
 export type Criterion = z.infer<typeof criterionSchema>;
+export type ExecutionMode =
+  | "cre-cli-simulation-trusted-relay"
+  | "cre-cli-simulation-no-model";
+
+function outcomeReason(criteria: Criterion[], outcome: number) {
+  if (outcome === 1) return "Accepted: all agreed checks passed.";
+  const issues = criteria.filter((criterion) => criterion.status !== "PASS");
+  if (outcome === 0)
+    return `Human review required: ${issues.find((criterion) => criterion.status === "INCONCLUSIVE")?.justification || "The evaluation was inconclusive."}`.slice(
+      0,
+      800,
+    );
+  return `Rejected: ${issues
+    .filter((criterion) => criterion.status === "FAIL")
+    .map((criterion) => `${criterion.id}: ${criterion.justification}`)
+    .join("; ")}`.slice(0, 800);
+}
+
 export function deterministic(i: EvaluationInput): Criterion[] {
   const words = i.report.trim().split(/\s+/u).length;
   const check = (
@@ -138,7 +157,11 @@ export function validateModel(raw: unknown, i: EvaluationInput): Criterion[] {
     throw Error("Unverifiable excerpts");
   return criteria;
 }
-export function evidence(i: EvaluationInput, semantic: Criterion[]) {
+export function evidence(
+  i: EvaluationInput,
+  semantic: Criterion[],
+  executionMode: ExecutionMode = "cre-cli-simulation-trusted-relay",
+) {
   const criteria = [...deterministic(i), ...semantic];
   const outcome = criteria.some((c) => c.status === "INCONCLUSIVE")
     ? 0
@@ -146,7 +169,7 @@ export function evidence(i: EvaluationInput, semantic: Criterion[]) {
       ? 2
       : 1;
   return {
-    executionMode: "cre-cli-simulation-trusted-relay" as const,
+    executionMode,
     workflowVersion: "research-v1",
     agreementId: i.agreementId,
     chainId: i.chainId,
@@ -158,13 +181,17 @@ export function evidence(i: EvaluationInput, semantic: Criterion[]) {
     model: i.policy.model,
     criteria,
     outcome,
+    reason: outcomeReason(criteria, outcome),
   };
 }
-export function inconclusive(i: EvaluationInput) {
+export function inconclusive(
+  i: EvaluationInput,
+  reason = "Evaluation unavailable or invalid. Human review required.",
+) {
   return i.policy.criteria.map((c) => ({
     id: c.id,
     status: "INCONCLUSIVE" as const,
-    justification: "Evaluation unavailable or invalid. Human review required.",
+    justification: reason,
     excerpts: [],
   }));
 }
@@ -213,9 +240,16 @@ export function samplePolicy(model: string): Policy {
 }
 
 /** Validate all evidence fields, including domain and exact input commitments, before relay. */
-export function validateEvidence(raw: unknown, input: EvaluationInput) {
+export function validateEvidence(
+  raw: unknown,
+  input: EvaluationInput,
+  executionMode: ExecutionMode = "cre-cli-simulation-trusted-relay",
+) {
   const record = z
-    .object({ criteria: z.array(criterionSchema).max(40) })
+    .object({
+      criteria: z.array(criterionSchema).max(40),
+      reason: z.string().min(1).max(800),
+    })
     .passthrough()
     .parse(raw);
   const semantic = validateModel(
@@ -226,7 +260,7 @@ export function validateEvidence(raw: unknown, input: EvaluationInput) {
     },
     input,
   );
-  const expected = evidence(input, semantic);
+  const expected = evidence(input, semantic, executionMode);
   if (JSON.stringify(raw) !== JSON.stringify(expected))
     throw Error("Evidence commitments mismatch");
   return expected;

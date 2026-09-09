@@ -91,7 +91,9 @@ for (const mode of [
 ] as const)
   test(`${mode} never produces pass`, () => {
     const r = runtime(mode);
-    expect(JSON.parse(evaluateInTee(r as any)).outcome).toBe(0);
+    const result = JSON.parse(evaluateInTee(r as any));
+    expect(result.outcome).toBe(0);
+    expect(result.reason).toContain("Human review required:");
     expect(r.calls).toBeLessThanOrEqual(3);
     if (mode === "unauthorized") expect(r.calls).toBe(1);
   });

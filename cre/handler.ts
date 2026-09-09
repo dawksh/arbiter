@@ -9,6 +9,27 @@ import {
 } from "../shared/evaluation";
 
 // All model I/O and validation remain inside handlerInTee. CLI simulation is not TEE attestation.
+function failureReason(error: unknown) {
+  if (error instanceof Error) {
+    if (error.message === "Missing credential")
+      return "The evaluator credential was unavailable to the confidential workflow.";
+    if (error.message === "Transport unavailable")
+      return "The model provider could not be reached after bounded retries.";
+    if (error.message === "Provider unavailable")
+      return "The model provider was unavailable after bounded retries.";
+    if (error.message === "Invalid response")
+      return "The model provider returned an invalid response.";
+    if (
+      error.message === "Wrong criterion set" ||
+      error.message === "Unverifiable excerpts"
+    )
+      return "The model response did not satisfy the agreed evidence rules.";
+  }
+  if (error instanceof z.ZodError)
+    return "The model response did not match the agreed structured format.";
+  return "The semantic evaluation could not produce valid evidence.";
+}
+
 export function evaluateInTee(runtime: TeeRuntime<EvaluationInput>) {
   const i = inputSchema.parse(runtime.config);
   let semantic;
@@ -77,10 +98,16 @@ export function evaluateInTee(runtime: TeeRuntime<EvaluationInput>) {
       break;
     }
     semantic = validateModel(raw, i);
-  } catch {
-    semantic = inconclusive(i);
+  } catch (error) {
+    semantic = inconclusive(i, failureReason(error));
   }
-  const result = evidence(i, semantic);
+  const result = evidence(
+    i,
+    semantic,
+    i.simulationMode === "no-model"
+      ? "cre-cli-simulation-no-model"
+      : "cre-cli-simulation-trusted-relay",
+  );
   // Only deliberately public evidence is emitted, never credentials or raw provider responses.
   const encoded = Buffer.from(JSON.stringify(result)).toString("base64");
   const chunkSize = 400;

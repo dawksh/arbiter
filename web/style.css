@@ -486,6 +486,28 @@ code {
   border-top: 1px solid #e3e6d9;
   padding: 20px 0;
 }
+.evaluation-reason {
+  border-left: 3px solid #78965f;
+  background: #eef1e5;
+  padding: 14px 16px;
+  margin: 18px 0 4px;
+  border-radius: 0 5px 5px 0;
+}
+.evaluation-reason.outcome-2 {
+  border-left-color: #a0573d;
+  background: #f7e9e2;
+}
+.evaluation-reason.outcome-0 {
+  border-left-color: #8b733e;
+  background: #f5eedf;
+}
+.evaluation-reason h3,
+.evaluation-reason p {
+  margin: 0;
+}
+.evaluation-reason p {
+  margin-top: 6px;
+}
 .evidence h3 {
   margin: 0 0 12px;
 }
