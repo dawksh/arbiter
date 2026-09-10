@@ -218,6 +218,31 @@ No local fake evaluator is configured. Without CRE CLI access and an Anthropic
 key, a requested evaluation remains unavailable and eventually becomes human
 review through the contract's evaluation timeout.
 
+## Fly.io deployment
+
+[`fly.toml`](fly.toml) and [`Dockerfile`](Dockerfile) deploy the Bun server as
+one Fly machine in Singapore. The server listens on port 8080 and retains its
+SQLite database on the encrypted `arbiter_data` volume at `/data`.
+
+The checked-in Fly configuration deliberately sets `DISABLE_WORKER=1`. This
+makes the public app safe to use for creating, accepting, funding, submitting,
+viewing evidence, challenging, resolving, and directly settling agreements
+without invoking Anthropic or using the evaluator relay key. An evaluation
+request is recorded but is not automatically processed in this mode.
+
+Deploy changes with:
+
+```sh
+flyctl deploy --app arbiter-escrow-daksh --config fly.toml --ha=false
+```
+
+The deployment never includes `.env.arc`, wallet keys, model credentials, or
+local SQLite files because [`.dockerignore`](.dockerignore) excludes them. Do
+not add evaluator or Anthropic credentials to the public configuration. If a
+future paid relay is enabled, add those values as Fly secrets, run a single
+worker against the existing database volume, and retain `APP_ORIGIN` as the
+public Fly URL so signature authorization remains bound to the correct origin.
+
 ## Arc testnet and real simulation
 
 Copy `.env.example` to an untracked environment file and supply:

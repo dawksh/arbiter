@@ -213,7 +213,7 @@ function App() {
     <>
       <header>
         <a className="brand" href="/">
-          <span className="mark">a</span> arbiter
+          <span className="mark" aria-label="Arbiter" /> arbiter
           <span className="beta">TESTNET</span>
         </a>
         <nav>

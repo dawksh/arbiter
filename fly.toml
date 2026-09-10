@@ -1,0 +1,29 @@
+app = "arbiter-escrow-daksh"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ORIGIN = "https://arbiter-escrow-daksh.fly.dev"
+  ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
+  CHAIN_ID = "5042002"
+  DB_PATH = "/data/arbiter-v1.sqlite"
+  DEPLOYMENT_BLOCK = "61109786"
+  DISABLE_WORKER = "1"
+  ESCROW_ADDRESS = "0xc6e0467bbb977155fdd93e5160c1f0c02822059e"
+  HOST = "0.0.0.0"
+  NODE_ENV = "production"
+  PORT = "8080"
+  RPC_URL = "https://rpc.testnet.arc.network"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  min_machines_running = 1
+  processes = ["app"]
+
+[[mounts]]
+  source = "arbiter_data"
+  destination = "/data"

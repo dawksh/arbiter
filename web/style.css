@@ -69,15 +69,11 @@ header {
   letter-spacing: -1px;
 }
 .mark {
-  background: #244d35;
-  color: #e5edc8;
+  background: url("./assets/arbiter-logo.png") center / contain no-repeat;
   width: 32px;
   height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  font-family: serif;
-  font-style: italic;
+  display: block;
+  flex: 0 0 32px;
 }
 .beta {
   font-size: 9px;

@@ -46,6 +46,20 @@ Re-run setup after restarting Anvil without a state file. It creates a new escro
 
 The model request and response validation execute inside `handlerInTee`. **The MVP execution mode is CRE CLI simulation with a trusted allowlisted relay, not a live attested TEE.** The CLI requires authentication; see [simulation commands](https://docs.chain.link/cre/reference/cli/workflow). The app has no fallback that invents a pass when the CLI or model is unavailable.
 
+## Public testnet app
+
+The Arc UI is deployed at **https://arbiter-escrow-daksh.fly.dev**. It stores
+public agreement content and evidence on an encrypted Fly SQLite volume. Its
+backend worker is intentionally disabled, so using the deployed UI does not
+make model requests or use an evaluator private key. Browser wallets still
+perform all permitted party and resolver transactions directly on Arc.
+
+Deploy application changes with:
+
+```sh
+flyctl deploy --app arbiter-escrow-daksh --config fly.toml --ha=false
+```
+
 Arc chain ID is **5042002**. The escrow uses the [USDC ERC-20 interface](https://docs.arc.io/arc/references/contract-addresses) at `0x3600000000000000000000000000000000000000`, with **six-decimal integers**. Arc's native gas interface uses 18 decimals; see the [stablecoin native model](https://docs.arc.io/arc/concepts/stablecoin-native-model). No native-value transfer funds the escrow.
 
 ## Demonstrate the outcomes

@@ -1,0 +1,14 @@
+node_modules
+.git
+.env*
+!.env.example
+.cache
+dist
+out
+*.sqlite*
+cache
+playwright-report
+test-results
+coverage
+*.tsbuildinfo
+.DS_Store
