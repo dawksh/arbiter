@@ -4,7 +4,12 @@ A Bun + React app and non-upgradeable Solidity escrow for research work. Clients
 
 **Implemented and locally verified:** payment, refund, and a resolved challenge through desktop and mobile browser tests against Anvil; contract deadline and authorization paths; signed APIs; immutable SQLite storage; restart recovery; confidential-handler WASM compilation.
 
-**Still requires external setup:** a real Anthropic call through authenticated CRE CLI simulation, relay delivery on Arc, and the three demo outcomes on Arc. No live model call, Arc deployment, or TEE attestation has been claimed. Browser tests use explicitly labeled synthetic evaluator fixtures. `SPEC.md` is the original wider concept; this README documents the research MVP scope.
+**Current proof boundary:** the escrow is deployed on Arc testnet and a resolved
+timeout-split agreement is available in the public app. A successful
+authenticated CRE CLI simulation with a real model, live paid/refunded Arc
+outcomes, and live TEE attestation still need independent demo evidence.
+Browser tests use explicitly labeled synthetic evaluator fixtures. `SPEC.md` is
+the original wider concept; this README documents the research MVP scope.
 
 ## Run locally
 
